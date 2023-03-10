@@ -13,6 +13,7 @@ import tkinter.messagebox
 from tkinter import *
 from tkinter import filedialog
 import pandas as pd         # pip install pandas
+import csv
 
 root = Tk()
 # Create the menubar
@@ -53,7 +54,16 @@ def locate_transaction_file():
     user_path_field.set( os.path.dirname(transaction_file_name) )         # Set path
 
 
-
+def get_checks():
+    with open('checks.csv', newline='') as csvfile:
+        check_mappings = csv.reader(csvfile, delimiter=',', quotechar='|')
+        checks = {}
+        for row in check_mappings:
+            # print(', '.join(row))
+            # print(row)
+            checks[ int(row[0]) ] = int(row[1])
+    print(checks)
+    return checks
 
 
 def map(file_coa, transaction_file_name):
@@ -65,9 +75,22 @@ def map(file_coa, transaction_file_name):
     chase['KEY'] = chase['KEY'].fillna(0)
     # file_coa = "Chart_Of_Accounts_Mappings.txt"
     coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
+
+    checks = get_checks()
     mia = 0
     for i, row in chase.iterrows():
         match = False
+
+
+    # for i, row in chase.iterrows():
+        if chase.loc[i, 'Details'] == 'CHECK':
+            check_number = int(chase.loc[i, 'Check'])
+            print( check_number )
+            chase.loc[i, 'KEY'] = checks[check_number]
+            continue
+
+
+        # if chase.loc[i, 'Details'] != 'CHECK':
         for j, row in coa.iterrows():
             if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
                 match = True
@@ -81,36 +104,18 @@ def map(file_coa, transaction_file_name):
     return mia, chase
 
 
-
 def list_checks(transaction_file_name):
     chase = pd.read_csv( transaction_file_name, dtype={7: object}, skiprows = 1 )
     chase.columns.values
-    print( chase.info() )     # Data structure
     cnames = ["Details","Posting Date","Description","Amount","Type","Balance","Check","KEY"]
     chase.columns = cnames
     chase['KEY'] = chase['KEY'].fillna(0)
-    # file_coa = "Chart_Of_Accounts_Mappings.txt"
-    # coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
-    # mia = 0
     checks = []
     for i, row in chase.iterrows():
-        # match = False
-        # for j, row in coa.iterrows():
-        # if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
-                # match = True
         if chase.loc[i, 'Details'] == 'CHECK':
-            # print( chase.iloc[i] )
-            # for k, v in chase.iloc[i].items():
-            #     print(k, v)
             v = list( chase.iloc[i] )
-            # print(f'{v[0]}, {v[1]}, {v[2]}, {v[3]}, {v[4]}, {v[5]}, {v[6]}, {v[7]}')
-            x = v[2][6:9]
-            print(x)
-            checks.append(x)
+            checks.append(int( v[6] ))
     checks_sorted = sorted( checks )
-    print('***********')
-    print(checks_sorted)
-    print('*********')
     for i in checks_sorted:
         print(i)
 
@@ -132,14 +137,12 @@ def group_expenses(mapped_transactions):
     root.destroy()
 
 
-def join():
+def join(file_coa):
     transaction_file_name = label_transaction_file['text']
     print(f'[{transaction_file_name}]')
-    mia, mapped_transactions = map(transaction_file_name)
+    mia, mapped_transactions = map(file_coa, transaction_file_name)
     if mia:
         tkinter.messagebox.showinfo('Warning', f'There are {mia} transactions MIA.')
-
-
     group_expenses(mapped_transactions)
 
 
@@ -147,7 +150,7 @@ def join():
 subMenu = Menu(menubar, tearoff=0)
 menubar.add_cascade(label="File", menu=subMenu)
 subMenu.add_command(label="Exit", command=root.destroy)
-subMenu.add_command(label="Goooooo", command=join)
+subMenu.add_command(label="Goooooo", command= lambda: join(file_coa) )
 
 def about_us():
     tkinter.messagebox.showinfo('About Sam\'s Tax Assistant', 'This indexes the Chart Of Account reference to your expenses.  Developed by Sam Portillo - 510.246.5504')
@@ -193,3 +196,4 @@ user_path_field.set('?')
 entry_path.grid(row=3, column=1)
 
 root.mainloop()
+# get_checks()
