@@ -20,6 +20,29 @@ menubar = Menu( root )
 root.config( menu=menubar)
 
 
+def search_multiple_mappings(file_coa):
+    #   Mapping expenses uses first match.
+    #      This implies j can be in i but i can not be in j
+    # COSTCO
+    # COSTCO GAS
+
+    coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
+    # print( coa.iloc[1:] )
+    # print( coa.iloc[300:].iterrows() )
+    match = False
+    for i, row in coa.iterrows():
+        for j, row in coa.iloc[i+1:].iterrows():
+            # if coa.loc[j, 'DESCRIPTION'] in coa.loc[i, 'DESCRIPTION']:
+            if coa.loc[i, 'DESCRIPTION'] in coa.loc[j, 'DESCRIPTION']:
+                match = True
+                print( i+2, coa.loc[i, 'DESCRIPTION'], j+2, coa.loc[j, 'DESCRIPTION'] )     # Add 1 for headings + 1 for index to id
+
+    if match:
+        print('Fail ! Multiple mappings found.')    
+    if not match:
+        print('Success !  No multiple matches.')
+
+
 def locate_transaction_file():
     # transaction_file_name = filedialog.askopenfilename()
     csv = 'Chase0106_Activity_20230308.CSV'
@@ -30,14 +53,17 @@ def locate_transaction_file():
     user_path_field.set( os.path.dirname(transaction_file_name) )         # Set path
 
 
-def map(transaction_file_name):
+
+
+
+def map(file_coa, transaction_file_name):
     chase = pd.read_csv( transaction_file_name, dtype={7: object}, skiprows = 1 )
     chase.columns.values
     # print( chase.info() )     # Data structure
     cnames = ["Details","Posting Date","Description","Amount","Type","Balance","Check","KEY"]
     chase.columns = cnames
     chase['KEY'] = chase['KEY'].fillna(0)
-    file_coa = "Chart_Of_Accounts_Mappings.txt"
+    # file_coa = "Chart_Of_Accounts_Mappings.txt"
     coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
     mia = 0
     for i, row in chase.iterrows():
@@ -53,6 +79,40 @@ def map(transaction_file_name):
 
     print(f'MIA = {mia}')
     return mia, chase
+
+
+
+def list_checks(transaction_file_name):
+    chase = pd.read_csv( transaction_file_name, dtype={7: object}, skiprows = 1 )
+    chase.columns.values
+    print( chase.info() )     # Data structure
+    cnames = ["Details","Posting Date","Description","Amount","Type","Balance","Check","KEY"]
+    chase.columns = cnames
+    chase['KEY'] = chase['KEY'].fillna(0)
+    # file_coa = "Chart_Of_Accounts_Mappings.txt"
+    # coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
+    # mia = 0
+    checks = []
+    for i, row in chase.iterrows():
+        # match = False
+        # for j, row in coa.iterrows():
+        # if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
+                # match = True
+        if chase.loc[i, 'Details'] == 'CHECK':
+            # print( chase.iloc[i] )
+            # for k, v in chase.iloc[i].items():
+            #     print(k, v)
+            v = list( chase.iloc[i] )
+            # print(f'{v[0]}, {v[1]}, {v[2]}, {v[3]}, {v[4]}, {v[5]}, {v[6]}, {v[7]}')
+            x = v[2][6:9]
+            print(x)
+            checks.append(x)
+    checks_sorted = sorted( checks )
+    print('***********')
+    print(checks_sorted)
+    print('*********')
+    for i in checks_sorted:
+        print(i)
 
 
 def group_expenses(mapped_transactions):
@@ -101,7 +161,9 @@ def test():
     root.destroy()
 
 
+file_coa = "Chart_Of_Accounts_Mappings.txt"
 transaction_file_name = 'Chase0106_Activity_20230308.CSV'
+
 # Main
 subMenu = Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Help", menu=subMenu)
@@ -120,7 +182,9 @@ label_transaction_file.grid(row=0, column=1, sticky=W)
 
 cwd = str(Path.cwd())
 f = Path(Path.cwd(), transaction_file_name)
-button2 = Button(root, text ="MIA - Transactions", bg='RED', command= lambda: map(f) ).grid(row=5, column=0, sticky=W)
+button4 = Button(root, text = "List Checks", command = lambda: list_checks(transaction_file_name)  ).grid(row=5, column=0)
+button2 = Button(root, text = "Identity Duplicate Mappings", bg='blue', command = lambda: search_multiple_mappings(file_coa)  ).grid(row=7, column=0)
+button3 = Button(root, text = "Identity Transactions MIA", bg='RED', command = lambda: map(file_coa, f) ).grid(row=9, column=0, sticky=W)
 
 Label( root, text='Path').grid(row=3, column=0, sticky=W)
 user_path_field = StringVar()
