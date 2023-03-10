@@ -15,15 +15,11 @@ import csv
 
 root = Tk()
 menubar = Menu( root )
-root.config( menu=menubar)
+root.config(menu=menubar)
+label_help = None
 
 
 def search_multiple_mappings(file_coa):
-    #   Mapping expenses uses first match.
-    #      This implies j can be in i but i can not be in j
-    # COSTCO
-    # COSTCO GAS        # In this case, no write off for gas
-
     coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
     match = False
     for i, row in coa.iterrows():
@@ -54,7 +50,6 @@ def get_checks():
         checks = {}
         for row in check_mappings:
             checks[ int(row[0]) ] = int(row[1])
-    print(checks)
     return checks
 
 
@@ -71,7 +66,7 @@ def map(file_coa, transaction_file_name):
         match = False
         if chase.loc[i, 'Details'] == 'CHECK':
             check_number = int(chase.loc[i, 'Check'])
-            print( check_number )
+            # print( check_number )
             chase.loc[i, 'KEY'] = checks[check_number]
             # continue
 
@@ -143,8 +138,28 @@ def about_us():
 
 
 def help():
-    tkinter.messagebox.showinfo('Help', 'Import tax file with header.\rThis header will be skipped with skiprows.')
+    root.geometry('500x500')
+    label_help['text'] = 'HELP INFORMATION\n\n' \
+    'Import tax file with header.\n' \
+    'Details,Posting Date,Description,Amount,Type,Balance,Check or Slip #\n' \
+    'This header will be skipped with skiprows.\n' \
+    '1. Verify that there are no multiple mappings:\n' \
+    '     Mapping expenses uses first match.\n' \
+    '     This implies j can be in i but i can not be in j\n' \
+    '     i COSTCO\n' \
+    '     j COSTCO GAS\n' \
+    '     In this case, no write off for fuel expense.\n' \
+    '2. Verify that there are no mappings MIA.\n' \
+    '3. List unmapped Checks.\n' \
+    '   Copy check numbers' \
+    '   Paste in a new file named checks.csv'
+    label_help.grid(row = 10, column=0, sticky=W )
+    button1 = Button( text ="Close Help", command= close_help).grid(row=20, column=0, sticky=W)
 
+
+def close_help():
+    label_help['text'] = 'Your welcome'
+    root.geometry('500x300')
 
 def test():
     root.destroy()
@@ -164,21 +179,44 @@ subMenu.add_cascade(label="Tax", command=join)
 
 root.geometry('500x300')
 root.title('2022 Tax Assistant')
-button1 = Button( text ="Import Expense File", command=locate_transaction_file ).grid(row=0, column=0, sticky=W)
+
+
+row = 0
+button1 = Button( text ="Import Expense File", command=locate_transaction_file ).grid(row=row, column=0, sticky=W)
 label_transaction_file = Label( root, text='?')
-label_transaction_file.grid(row=0, column=1, sticky=W)
+label_transaction_file.grid(row=row, column=1, sticky=W)
 
 cwd = str(Path.cwd())
 f = Path(Path.cwd(), transaction_file_name)
-button4 = Button(root, text = "List Checks", command = lambda: list_checks(transaction_file_name)  ).grid(row=5, column=0)
-button2 = Button(root, text = "Identity Duplicate Mappings", bg='blue', command = lambda: search_multiple_mappings(file_coa)  ).grid(row=7, column=0)
-button3 = Button(root, text = "Identity Transactions MIA", bg='RED', command = lambda: map(file_coa, f) ).grid(row=9, column=0, sticky=W)
 
-Label( root, text='Path').grid(row=3, column=0, sticky=W)
+row = 1
+path1 = Label( root, text='Path', justify=LEFT).grid(row=row, column=0, sticky=W)
 user_path_field = StringVar()
 entry_path = Entry(root, textvariable=user_path_field)
 user_path_field.set('?')
-entry_path.grid(row=3, column=1)
+entry_path.grid(row=row, column=1)
+
+row = 2
+button2 = Button(root, text = "Identity Duplicate Mappings", bg='blue', command = lambda: search_multiple_mappings(file_coa)  ).grid(row=row, column=0)
+
+row = 3
+button3 = Button(root, text = "Identity Transactions MIA", bg='RED', command = lambda: map(file_coa, f) ).grid(row=row, column=0, sticky=W)
+
+row = 4
+button4 = Button(root, text = "List Checks", command = lambda: list_checks(transaction_file_name)  ).grid(row=row, column=0)
+
+
+row = 5
+label_help = Label(root, text='Help Me !', relief=RAISED, justify=LEFT)          # Need to lines to make global, yes weird ?
+label_help.grid(row = row, column=0, sticky=W )
+
+
+# var1 = StringVar()
+# label_test1 = Label( root, textvariable=var1, relief=RAISED, justify=LEFT )
+# var1.set("Hey!?\n How are you doing?")
+# label_test1.grid(row=11, column=0)
 
 root.mainloop()
 # get_checks()
+# Wed 10:50
+# ppo 
