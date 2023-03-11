@@ -3,7 +3,7 @@
 #   12/15/2019
 #   Revised 2023.03.10
 #   Version 1.1
-# 
+
 from pathlib import Path
 
 import os
@@ -17,6 +17,8 @@ root = Tk()
 menubar = Menu( root )
 root.config(menu=menubar)
 label_help = None
+button_close_help = None
+
 
 
 def search_multiple_mappings(file_coa):
@@ -27,11 +29,13 @@ def search_multiple_mappings(file_coa):
             if coa.loc[i, 'DESCRIPTION'] in coa.loc[j, 'DESCRIPTION']:
                 match = True
                 print(i+2, coa.loc[i, 'DESCRIPTION'], j+2, coa.loc[j, 'DESCRIPTION'] )     # Add 1 for headings + 1 for index to id
-
     if match:
         print('Fail ! Multiple mappings found.')
+        tkinter.messagebox.showinfo('Fail !', 'Fail ! Multiple mappings found.')
+
     if not match:
         print('Success !  No multiple matches.')
+        tkinter.messagebox.showinfo(title='Success !', message='No multiple matches.')
 
 
 def locate_transaction_file():
@@ -66,10 +70,8 @@ def map(file_coa, transaction_file_name):
         match = False
         if chase.loc[i, 'Details'] == 'CHECK':
             check_number = int(chase.loc[i, 'Check'])
-            # print( check_number )
             chase.loc[i, 'KEY'] = checks[check_number]
             # continue
-
         if chase.loc[i, 'Details'] != 'CHECK':
             for j, row in coa.iterrows():
                 if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
@@ -79,7 +81,6 @@ def map(file_coa, transaction_file_name):
             if not match:
                 mia += 1
                 print( i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'] )
-
     print(f'MIA = {mia}')
     return mia, chase
 
@@ -96,7 +97,7 @@ def list_checks(transaction_file_name):
         if chase.loc[i, 'Details'] == 'CHECK':
             v = list( chase.iloc[i] )
             checks.append(int( v[6] ))
-    checks_sorted = sorted( checks )
+    checks_sorted = sorted(checks)
     for i in checks_sorted:
         print(i)
 
@@ -138,7 +139,13 @@ def about_us():
 
 
 def help():
+    global label_help
+    global button_close_help
+
     root.geometry('500x500')
+    label_help = Label(root, text='', relief=RAISED, justify=LEFT)          # Need to lines to make global, yes weird ?
+    # label_help.grid(row = 6, column=0, sticky=W )
+
     label_help['text'] = 'HELP INFORMATION\n\n' \
     'Import tax file with header.\n' \
     'Details,Posting Date,Description,Amount,Type,Balance,Check or Slip #\n' \
@@ -151,15 +158,24 @@ def help():
     '     In this case, no write off for fuel expense.\n' \
     '2. Verify that there are no mappings MIA.\n' \
     '3. List unmapped Checks.\n' \
-    '   Copy check numbers' \
-    '   Paste in a new file named checks.csv'
+    '   Copy check numbers\n' \
+    '   Paste in a new file named checks.csv\n' \
+    '   Map to COA Key using the following format\n' \
+    '   check number, COA Key\n' \
+    '   Click Tax\n' \
+    '   Results are in Expense.csv'
     label_help.grid(row = 10, column=0, sticky=W )
-    button1 = Button( text ="Close Help", command= close_help).grid(row=20, column=0, sticky=W)
+    button_close_help = Button( text ="Close Help", command= close_help)
+    button_close_help.grid(row=20, column=0, sticky=W)
 
 
 def close_help():
+    global label_help
+    global button_close_help
     label_help['text'] = 'Your welcome'
     root.geometry('500x300')
+    button_close_help.destroy()
+
 
 def test():
     root.destroy()
@@ -174,12 +190,13 @@ menubar.add_cascade(label="Help", menu=subMenu)
 subMenu.add_command(label="About Us", command=about_us)
 subMenu.add_command(label="Help Me", command=help)
 
-subMenu = Menu(menubar, tearoff=0)
-subMenu.add_cascade(label="Tax", command=join)
+subMenu_tax = Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Tax It", menu=subMenu_tax, command=join)
+
+# subMenu.add_cascade(label="Tax", command=join)
 
 root.geometry('500x300')
 root.title('2022 Tax Assistant')
-
 
 row = 0
 button1 = Button( text ="Import Expense File", command=locate_transaction_file ).grid(row=row, column=0, sticky=W)
@@ -205,18 +222,5 @@ button3 = Button(root, text = "Identity Transactions MIA", bg='RED', command = l
 row = 4
 button4 = Button(root, text = "List Checks", command = lambda: list_checks(transaction_file_name)  ).grid(row=row, column=0)
 
-
 row = 5
-label_help = Label(root, text='Help Me !', relief=RAISED, justify=LEFT)          # Need to lines to make global, yes weird ?
-label_help.grid(row = row, column=0, sticky=W )
-
-
-# var1 = StringVar()
-# label_test1 = Label( root, textvariable=var1, relief=RAISED, justify=LEFT )
-# var1.set("Hey!?\n How are you doing?")
-# label_test1.grid(row=11, column=0)
-
 root.mainloop()
-# get_checks()
-# Wed 10:50
-# ppo 
