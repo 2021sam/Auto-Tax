@@ -14,10 +14,12 @@ import pandas as pd         # pip install pandas
 import csv
 
 root = Tk()
-menubar = Menu( root )
-root.config(menu=menubar)
+menu = Menu( root )
+root.config(menu=menu)
 label_help = None
 button_close_help = None
+app_width = 700
+app_height = 150
 
 
 
@@ -128,12 +130,6 @@ def join(file_coa):
     group_expenses(mapped_transactions)
 
 
-# Create the submenu
-subMenu = Menu(menubar, tearoff=0)
-menubar.add_cascade(label="File", menu=subMenu)
-subMenu.add_command(label="Exit", command=root.destroy)
-subMenu.add_command(label="Goooooo", command= lambda: join(file_coa) )
-
 def about_us():
     tkinter.messagebox.showinfo('About Sam\'s Tax Assistant', 'This indexes the Chart Of Account reference to your expenses.  Developed by Sam Portillo - 510.246.5504')
 
@@ -142,7 +138,8 @@ def help():
     global label_help
     global button_close_help
 
-    root.geometry('500x500')
+    help_height = 500
+    root.geometry(f'{app_width}x{help_height}')
     label_help = Label(root, text='', relief=RAISED, justify=LEFT)          # Need to lines to make global, yes weird ?
     # label_help.grid(row = 6, column=0, sticky=W )
 
@@ -173,7 +170,7 @@ def close_help():
     global label_help
     global button_close_help
     label_help['text'] = 'Your welcome'
-    root.geometry('500x300')
+    root.geometry(f'{app_width}x{app_height}')
     button_close_help.destroy()
 
 
@@ -184,18 +181,27 @@ def test():
 file_coa = "Chart_Of_Accounts_Mappings.txt"
 transaction_file_name = 'Chase0106_Activity_20230308.CSV'
 
-# Main
-subMenu = Menu(menubar, tearoff=0)
-menubar.add_cascade(label="Help", menu=subMenu)
-subMenu.add_command(label="About Us", command=about_us)
-subMenu.add_command(label="Help Me", command=help)
 
-subMenu_tax = Menu(menubar, tearoff=0)
-menubar.add_cascade(label="Tax It", menu=subMenu_tax, command=join)
+# Menu Bar
+exit_menu = Menu(menu, tearoff=0)
+menu.add_cascade(label="Exit", menu=exit_menu)
+exit_menu.add_command(label="Exit", command=root.destroy)
 
-# subMenu.add_cascade(label="Tax", command=join)
+validate_menu = Menu(menu)
+menu.add_cascade(label="Validate", menu=validate_menu)
+validate_menu.add_command(label="Identify Duplicate Mappings", command = lambda: search_multiple_mappings(file_coa))
+validate_menu.add_command(label="Identify Transactions MIA", command = lambda: map(file_coa, f) )
 
-root.geometry('500x300')
+tax_menu = Menu(menu, tearoff=0)
+menu.add_cascade(label="Tax", menu=tax_menu)
+tax_menu.add_command(label="Auto Tax", command= lambda: join(file_coa) )
+
+help_menu = Menu(menu, tearoff=0)
+menu.add_cascade(label="Help", menu=help_menu)
+help_menu.add_command(label="About Us", command=about_us)
+help_menu.add_command(label="Help Me", command=help)
+
+root.geometry(f'{app_width}x{app_height}')
 root.title('2022 Tax Assistant')
 
 row = 0
