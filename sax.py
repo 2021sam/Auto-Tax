@@ -42,7 +42,8 @@ def search_multiple_mappings(file_coa):
 
 def locate_transaction_file():
     # transaction_file_name = filedialog.askopenfilename()
-    csv = 'Chase0106_Activity_20230308.CSV'
+    # csv = 'Chase0106_Activity_20230308.CSV'
+    csv = 'Chase0106_Activity_20250205.CSV'
     cwd = str(Path.cwd())
     transaction_file_name = Path(Path.cwd(), csv)
     label_transaction_file['text'] = transaction_file_name
@@ -59,32 +60,92 @@ def get_checks():
     return checks
 
 
+# def map(file_coa, transaction_file_name):
+#     print('63')
+#     # chase = pd.read_csv( transaction_file_name, dtype={7: object}, skiprows = 1 )
+#     chase = pd.read_csv( transaction_file_name, skiprows = 1 )
+#     print('64')
+#     chase.columns.values
+#     cnames = ["Details","Posting Date","Description","Amount","Type","Balance","Check","KEY"]
+#     print('67')
+#     chase.columns = cnames
+#     chase['KEY'] = chase['KEY'].fillna(0)
+#     coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
+
+#     # checks = get_checks()
+#     checks = {}
+
+
+#     mia = 0
+#     for i, row in chase.iterrows():
+#         match = False
+#         if chase.loc[i, 'Details'] == 'CHECK':
+#             check_number = int(chase.loc[i, 'Check'])
+#             chase.loc[i, 'KEY'] = checks[check_number]
+#             # continue
+#         if chase.loc[i, 'Details'] != 'CHECK':
+#             for j, row in coa.iterrows():
+#                 if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
+#                     match = True
+#                     chase.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
+#                     # print( i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'] )
+#             if not match:
+#                 mia += 1
+#                 print( i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'] )
+#     print(f'MIA = {mia}')
+#     return mia, chase
+
+
 def map(file_coa, transaction_file_name):
-    chase = pd.read_csv( transaction_file_name, dtype={7: object}, skiprows = 1 )
-    chase.columns.values
-    cnames = ["Details","Posting Date","Description","Amount","Type","Balance","Check","KEY"]
+    print('63')
+    # Load the CSV with the appropriate column headers
+    chase = pd.read_csv(transaction_file_name, skiprows=1)
+    print('64')
+    
+    # Display columns (for debugging purposes)
+    print(chase.columns.values)
+    
+    # Define the column names
+    cnames = ["Details", "Posting Date", "Description", "Amount", "Type", "Balance", "Check", "KEY"]
+    print('67')
+    
+    # Assign the new column names
     chase.columns = cnames
+    
+    # Fill missing KEY values with 0
     chase['KEY'] = chase['KEY'].fillna(0)
+    
+    # Read the chart of accounts (COA) file
     coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
-    checks = get_checks()
-    mia = 0
+    
+    # No checks are needed, so we can skip that part
+    checks = {}
+
+    mia = 0  # Variable to track how many rows don't match anything in the COA
+    
+    # Iterate through each row in the 'chase' DataFrame
     for i, row in chase.iterrows():
-        match = False
-        if chase.loc[i, 'Details'] == 'CHECK':
-            check_number = int(chase.loc[i, 'Check'])
-            chase.loc[i, 'KEY'] = checks[check_number]
-            # continue
-        if chase.loc[i, 'Details'] != 'CHECK':
-            for j, row in coa.iterrows():
+        match = False  # Flag to check if a match is found in the COA
+        
+        # We skip the check processing, no need to handle 'CHECK' details
+        if chase.loc[i, 'Details'] != 'CHECK':  # No need for the check logic
+            # Loop through COA to find a match
+            for j, coa_row in coa.iterrows():
                 if coa.loc[j, 'DESCRIPTION'] in chase.loc[i, 'Description']:
                     match = True
                     chase.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
-                    # print( i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'] )
+                    # print(i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'])
+            
+            # If no match found, increment mia
             if not match:
                 mia += 1
-                print( i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'] )
+                print(i, chase.loc[i, 'KEY'], chase.loc[i, 'Description'], chase.loc[i, 'Amount'])
+
     print(f'MIA = {mia}')
+    
+    # Return the result
     return mia, chase
+
 
 
 def list_checks(transaction_file_name):
@@ -179,7 +240,8 @@ def test():
 
 
 file_coa = "Chart_Of_Accounts_Mappings.txt"
-transaction_file_name = 'Chase0106_Activity_20230308.CSV'
+# transaction_file_name = 'Chase0106_Activity_20230308.CSV'
+transaction_file_name = 'Chase0106_Activity_20250205.CSV'
 
 
 # Menu Bar
