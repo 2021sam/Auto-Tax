@@ -14,6 +14,8 @@ def preprocess_file(transaction_file_name):
     try:
         # Step 1: Import the original file into DataFrame 1 (chase_df)
         chase_df = pd.read_csv(transaction_file_name)  # Don't skip any rows
+        print(chase_df.columns.to_list())
+        print(chase_df.tail())
         print(f"File loaded successfully: {transaction_file_name}")
         
         # Print the column names to debug (with trimming)
@@ -27,7 +29,7 @@ def preprocess_file(transaction_file_name):
         
         # Step 3: Initialize DataFrame 2 (chase_df_2) with empty columns
         chase_df_2 = pd.DataFrame(columns=desired_columns)
-        
+        print(chase_df_2.columns.to_list())
         # Step 4: Create a mapping structure to map columns from DataFrame 1 to DataFrame 2
         column_mapping = {
             "Date": "Posting Date",       # Map Date to Posting Date
@@ -140,6 +142,7 @@ def join(file_coa):
     """Map the transactions with the COA and then group the expenses."""
     global chase_df_2
     
+    print('join')
     # Ensure the global chase_df_2 is not None (file should be loaded and processed)
     if chase_df_2 is None:
         print("Error: The transaction data has not been loaded yet.")
@@ -164,8 +167,8 @@ if __name__ == "__main__":
     file_coa = "Chart_Of_Accounts_Mappings.txt"
 
     # Provide path to the transaction file here
-    transaction_file_name = "/Users/2021sam/Desktop/2024 Tax/Last year (2024)_2613.CSV"
-    
+    # transaction_file_name = "/Users/2021sam/Desktop/2024 Tax/Last year (2024)_2613.CSV"
+    transaction_file_name = "/Users/2021sam/Desktop/2024 Tax/Chase0106_Activity_20250205.CSV"
     # Preprocess the transaction file
     chase_df_2 = preprocess_file(transaction_file_name)
     
