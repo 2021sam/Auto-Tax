@@ -2,9 +2,6 @@ import os
 import pandas as pd
 from tkinter import filedialog, Tk
 
-# Global variable to store the preprocessed DataFrame
-chase_df_2 = None
-
 def import_data(transaction_file_name):
     print('Import Data:')
     # Read the actual header row (first row) separately using nrows=1
@@ -52,7 +49,7 @@ def preprocess_file(df):
     # desired_columns = ["Details", "Posting Date", "Description", "Amount", "Type", "Balance", "Check", "KEY"]
     desired_columns = ["Details", "Posting Date", "Description", "Amount", "Type", "Balance", "Check"]
     
-    # Step 3: Initialize DataFrame 2 (chase_df_2) with empty columns
+    # Step 3: Initialize DataFrame 2 with empty columns
     df_2 = pd.DataFrame(columns=desired_columns)
     print(df_2.columns.to_list())
 
@@ -60,13 +57,40 @@ def preprocess_file(df):
     column_mapping = {
         "Date": "Posting Date",       # Map Date to Posting Date
         "Description": "Description", # Direct mapping
-        "Debit": "Amount",            # Debit becomes Amount
-        "Credit": "Amount",           # Credit becomes Amount (negative)
     }
 
-    # print_df_structure(df_2)
+    # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the mapping
+    for original_col, target_col in column_mapping.items():
+        print(f' original_col: {original_col}, target_col: {target_col}')
+        if original_col in df.columns:
+            df_2[target_col] = df[original_col]
+        else:
+            print(f"Warning: {original_col} not found in DataFrame 1.")
+
+
+    # print(df.columns)
     # exit()
 
+
+    # Step 6: Handle the Amount column by checking if there's a Debit value
+    for i, row in df.iterrows():
+        if pd.notnull(row['Debit']):  # If Debit has a value
+            df_2.at[i, 'Amount'] = row['Debit']
+        elif pd.notnull(row['Credit']):  # If Debit is empty, use Credit
+            df_2.at[i, 'Amount'] = -row['Credit']  # Make Credit negative for Amount
+
+    # # Step 7: Ensure Amount column is numeric and handle errors gracefully
+    # df_2['Amount'] = pd.to_numeric(df_2['Amount'], errors='coerce')  # Convert to numeric, coercing errors to NaN
+
+    # # Step 8: Add handling for 'Check' (if applicable)
+    # df_2['Check'] = df_2.get('Check', 'N/A')  # If there's no Check, default to 'N/A'
+
+
+    # Print the final structure and check if rows are added
+    for x in range(5):
+        print('.')
+    print("df_2 structure after preprocessing:")
+    print_df_structure(df_2)
 
     print('71 *************************')
     # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the mapping
@@ -77,42 +101,25 @@ def preprocess_file(df):
         else:
             print(f"Warning: {original_col} not found in DataFrame 1.")
 
-
     print_df_structure(df_2)
-    exit()
-    # Step 6: Handle Amount column for Debit/Credit logic
-    # Assuming negative values in the 'Amount' column are debits
-
-    # Step 6: Ensure Amount column is numeric and handle errors gracefully
-    chase_df_2['Amount'] = pd.to_numeric(chase_df_2['Amount'], errors='coerce')  # Convert to numeric, coercing errors to NaN
-    # chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)  # Apply abs to valid numbers
-    chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)
     # exit()
-    # Step 7: Handle missing 'KEY' values and fill with 0
-    # chase_df_2['KEY'] = chase_df_2['KEY'].fillna(0)
-    # exit()
-
     # Step 8: Add handling for 'Check' (if applicable) - You might want to handle 'Check' or 'Slip #' as required
-    chase_df_2['Check'] = chase_df_2.get('Check', 'N/A')  # If there's no Check, default to 'N/A'
+    df_2['Check'] = df_2.get('Check', 'N/A')  # If there's no Check, default to 'N/A'
+
     # exit()
     print("Preprocessing complete.")
-    print("First few rows of chase_df_2:")
-    # print(chase_df_2.head())  # Display first few rows of the new DataFrame 2
-    print_df_structure(chase_df_2)
-    exit()
-    return chase_df_2
-    
+    print("First few rows of df:")
+    return df_2
 
 
 
-def map(file_coa):
-    """Perform the mapping of COA to the global chase DataFrame."""
+def map(df, file_coa):
+    """Perform the mapping of COA to the global DataFrame."""
     print('')
     print('')
     print('map')
-    global chase_df_2
     
-    if chase_df_2 is None:
+    if df is None:
         print("Error: The transaction data has not been preprocessed yet.")
         return None, None
     
@@ -129,37 +136,36 @@ def map(file_coa):
     # Initialize a variable to track how many rows do not match COA
     mia = 0
     
-    # Iterate through each row in the chase DataFrame
-    for i, row in chase_df_2.iterrows():
+    # Iterate through each row in the DataFrame
+    for i, row in df.iterrows():
         match = False
         print('.')
         print(f'i: {i}')
         # print(f'row: {row}')
-        # if chase_df_2.loc[i, 'Details'] != 'CHECK':  # Skip 'CHECK' related logic
+
         print(row['Details'])
         if row['Details'] == 'DEBIT' or row['Details'] == 'CREDIT':  # Skip 'CHECK' related logic
 
             for j, coa_row in coa.iterrows():
-                if coa.loc[j, 'DESCRIPTION'] in chase_df_2.loc[i, 'Description']:
+                if coa.loc[j, 'DESCRIPTION'] in df.loc[i, 'Description']:
                     match = True
-                    chase_df_2.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
-                    
+                    df.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
+
             # If no match found, increment 'mia'
             if not match:
                 mia += 1
-                print(i, chase_df_2.loc[i, 'KEY'], chase_df_2.loc[i, 'Description'], chase_df_2.loc[i, 'Amount'])
+                print(i, df.loc[i, 'KEY'], df.loc[i, 'Description'], df.loc[i, 'Amount'])
 
     print(f'MIA = {mia}')
     
-    return mia, chase_df_2
+    return mia, df
 
 
-def group_expenses():
+def group_expenses(df):
     """Group the expenses based on the KEY column."""
-    global chase_df_2
     
     # Group the transactions by KEY and sum the amounts
-    x = chase_df_2.groupby(['KEY'])[['Amount']]
+    x = df.groupby(['KEY'])[['Amount']]
     y = x.sum()
     
     # Read the Chart of Accounts Key (COA) file
@@ -186,26 +192,25 @@ def group_expenses():
     print("File saved successfully.")
 
 
-def join(file_coa):
+def join(df, file_coa):
     """Map the transactions with the COA and then group the expenses."""
-    global chase_df_2
-    
+
     print('join')
-    # Ensure the global chase_df_2 is not None (file should be loaded and processed)
-    if chase_df_2 is None:
+    # Ensure the global df is not None (file should be loaded and processed)
+    if df is None:
         print("Error: The transaction data has not been loaded yet.")
         return
     
     print(f'Mapping transactions with COA file: {file_coa}')
     
     # Call the map function to map the transactions with the COA
-    mia, mapped_transactions = map(file_coa)
+    mia, mapped_transactions = map(df, file_coa)
     
     if mia:
         print(f"Warning: There are {mia} transactions MIA.")
     
     # Call group_expenses to group the expenses and save the result
-    group_expenses()
+    group_expenses(df)
 
 
 def print_df_structure(df):
@@ -229,8 +234,8 @@ if __name__ == "__main__":
     file_coa = "Chart_Of_Accounts_Mappings.txt"
 
     # Provide path to the transaction file here
-    transaction_file_name = "Last year (2024)_2613.CSV"
-    # transaction_file_name = "Chase0106_Activity_20250205.CSV"
+    # transaction_file_name = "Last year (2024)_2613.CSV"
+    transaction_file_name = "Chase0106_Activity_20250205.CSV"
     df = import_data(transaction_file_name)
 
     # Check if both 'Debit' and 'Credit' columns are present
@@ -242,12 +247,12 @@ if __name__ == "__main__":
     # # Add a new column called 'KEY' with a default value or calculated values
     df['KEY'] = None  # You can replace 'default_value' with the value you want to assign to this column
     
-    # print_df_structure(chase_df_2)
-    exit()
+    print_df_structure(df)
+    # exit()
 
 
-    if chase_df_2 is not None:
+    if df is not None:
         # If preprocessing is successful, proceed to join and map with COA
-        join(file_coa)
+        join(df, file_coa)
     else:
         print("Error: Preprocessing failed. Exiting.")
