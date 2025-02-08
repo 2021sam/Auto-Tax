@@ -158,9 +158,16 @@ def preprocess_file(transaction_file_name):
     try:
         # Step 1: Import the original file into DataFrame 1 (chase_df)
         chase_df = pd.read_csv(transaction_file_name)  # Don't skip any rows
+
+        # Attempt to read the CSV file with the correct header row and skip any initial rows
+        # chase_df = pd.read_csv(transaction_file_name, header=1, skipinitialspace=True)
+
+
+
         columns_1 = chase_df.columns.to_list()
         print(columns_1)
         print(chase_df.tail())
+        print_df_structure(chase_df)
         print(f"File loaded successfully: {transaction_file_name}")
         
         # Print the column names to debug (with trimming)
@@ -187,15 +194,20 @@ def preprocess_file(transaction_file_name):
             "Check or Slip #": "Check",         # Map 'Check or Slip #' to 'Check'
         }
         # exit()
-
+        print('*************************')
         # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the mapping
         for original_col, target_col in column_mapping.items():
-            print(original_col, target_col)
+            print(f' original_col: {original_col}, target_col: {target_col}')
             if original_col in chase_df.columns:
                 chase_df_2[target_col] = chase_df[original_col]
             else:
                 print(f"Warning: {original_col} not found in DataFrame 1.")
-        # exit()
+
+
+        print(chase_df_2.columns.to_list())
+        print(chase_df_2.head())
+        print_df_structure(chase_df_2)
+        exit()
         # Step 6: Handle Amount column for Debit/Credit logic
         # Assuming negative values in the 'Amount' column are debits
 
@@ -339,12 +351,23 @@ def join(file_coa):
 
 def print_df_structure(df):
     print('**************************  DATAFRAME STRUCTURE')
-    # Iterate over all columns in the DataFrame
-    for column in df.columns:
-        print(f"Column: {column}")
-        print(df[column].head())  # Print first 5 rows of each column
-        print()  # Print a blank line for separation
+    print(df.columns.to_list())
+    print(df.head())
+    print('.iloc:')
+    # Print the first row
+    print(df.iloc[0])
+    print('iloc2:')
+    # Print the value of the first row and first column (i.e., value at (0, 0))
+    print(df.iloc[0, 0])
 
+    # # Iterate over all columns in the DataFrame
+    # for column in df.columns:
+    #     print(f"Column: {column}")
+    #     print(df[column].head())  # Print first 5 rows of each column
+    #     print()  # Print a blank line for separation
+
+        # for v in df[column]:
+        #     print(v)
 
 
 
