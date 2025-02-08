@@ -186,6 +186,7 @@ def preprocess_file(transaction_file_name):
             "Balance": "Balance",               # 'Balance' stays the same
             "Check or Slip #": "Check",         # Map 'Check or Slip #' to 'Check'
         }
+        # exit()
 
         # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the mapping
         for original_col, target_col in column_mapping.items():
@@ -194,21 +195,27 @@ def preprocess_file(transaction_file_name):
                 chase_df_2[target_col] = chase_df[original_col]
             else:
                 print(f"Warning: {original_col} not found in DataFrame 1.")
-
+        # exit()
         # Step 6: Handle Amount column for Debit/Credit logic
         # Assuming negative values in the 'Amount' column are debits
-        chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)
 
+        # Step 6: Ensure Amount column is numeric and handle errors gracefully
+        chase_df_2['Amount'] = pd.to_numeric(chase_df_2['Amount'], errors='coerce')  # Convert to numeric, coercing errors to NaN
+        # chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)  # Apply abs to valid numbers
+        chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)
+        # exit()
         # Step 7: Handle missing 'KEY' values and fill with 0
         chase_df_2['KEY'] = chase_df_2['KEY'].fillna(0)
+        # exit()
 
         # Step 8: Add handling for 'Check' (if applicable) - You might want to handle 'Check' or 'Slip #' as required
         chase_df_2['Check'] = chase_df_2.get('Check', 'N/A')  # If there's no Check, default to 'N/A'
-        
+        # exit()
         print("Preprocessing complete.")
         print("First few rows of chase_df_2:")
-        print(chase_df_2.head())  # Display first few rows of the new DataFrame 2
+        # print(chase_df_2.head())  # Display first few rows of the new DataFrame 2
         print_df_structure(chase_df_2)
+        exit()
         return chase_df_2
     
     except Exception as e:
@@ -349,11 +356,11 @@ if __name__ == "__main__":
 
     # Provide path to the transaction file here
     # transaction_file_name = "/Users/2021sam/Desktop/2024 Tax/Last year (2024)_2613.CSV"
-    transaction_file_name = "/Users/2021sam/Desktop/2024 Tax/Chase0106_Activity_20250205.CSV"
+    transaction_file_name = "Chase0106_Activity_20250205.CSV"
     # Preprocess the transaction file
     chase_df_2 = preprocess_file(transaction_file_name)
     print('**************************  PRE PROCESSED')
-    print_df_structure(chase_df_2)
+    # print_df_structure(chase_df_2)
     exit()
 
 

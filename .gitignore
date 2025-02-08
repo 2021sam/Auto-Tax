@@ -2,3 +2,61 @@ env
 .vscode
 *.CSV
 *.csv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+*.py[cod]
+*$py.class
+
+# Django migrations
+**/migrations/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+
+# Local virtual environment
+env/
+venv/
+ENV/
+env.bak/
+*.env
+
+# Database
+*.sqlite3
+*.db
+
+# Media and static files
+media/
+static_production/
+
+# Unit test / coverage reports
+coverage/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# IDE files (for example, if you're using VSCode or PyCharm)
+.vscode/
+.idea/
+
+# macOS system files
+.DS_Store
+
+# Build files
+*.egg-info/
+*.egg
+dist/
+build/
+pip-wheel-metadata/
+admin2C
+
+utility/geo/data/*.txt
+utility/geo/data/US/*.txt
