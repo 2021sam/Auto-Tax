@@ -73,6 +73,83 @@ chase_df_2 = None
 #         print(f"Error processing file {transaction_file_name}: {e}")
 #         return None
 
+# def preprocess_file(transaction_file_name):
+#     """Load and preprocess the CSV file into DataFrame 1 and then create DataFrame 2."""
+#     global chase_df_2
+    
+#     print(f'Preprocessing file: {transaction_file_name}')
+#     try:
+#         # Step 1: Import the original file into DataFrame 1 (chase_df)
+#         chase_df = pd.read_csv(transaction_file_name)  # Don't skip any rows
+#         columns_1 = chase_df.columns.to_list()
+#         print(f"Columns in the loaded file: {columns_1}")
+#         print(chase_df.tail())
+#         print(f"File loaded successfully: {transaction_file_name}")
+        
+#         # Trim any extra spaces from column names
+#         chase_df.columns = chase_df.columns.str.strip()
+
+#         # Step 2: Create a new DataFrame 2 with the desired column headings
+#         desired_columns = ["Details", "Posting Date", "Description", "Amount", "Type", "Balance", "Check", "KEY"]
+        
+#         # Step 3: Initialize DataFrame 2 (chase_df_2) with empty columns
+#         chase_df_2 = pd.DataFrame(columns=desired_columns)
+
+#         # Step 4: Create a dynamic column mapping based on the file structure
+#         column_mapping = {}
+
+#         # Check if the file has 'Debit' and 'Credit' columns (assuming the alternative structure)
+#         if 'Debit' in chase_df.columns and 'Credit' in chase_df.columns:
+#             print("Using alternative structure (Debit/Credit columns detected).")
+#             column_mapping = {
+#                 "Date": "Posting Date",  # Map Date to Posting Date
+#                 "Description": "Description",  # Direct mapping
+#                 "Debit": "Amount",  # Debit becomes Amount
+#                 "Credit": "Amount",  # Credit becomes Amount (negative)
+#                 "Type": "Type",  # Type can be copied directly
+#                 "Balance": "Balance",  # Balance can be copied directly
+#                 "Check or Slip #": "Check",  # Map 'Check or Slip #' to 'Check'
+#             }
+#         else:
+#             print("Using default structure (No Debit/Credit columns).")
+#             column_mapping = {
+#                 "Details": "Details",  # Direct mapping for Details
+#                 "Posting Date": "Posting Date",  # Direct mapping for Posting Date
+#                 "Description": "Description",  # Direct mapping for Description
+#                 "Amount": "Amount",  # Direct mapping for Amount
+#                 "Type": "Type",  # Type can be copied directly
+#                 "Balance": "Balance",  # Balance can be copied directly
+#                 "Check or Slip #": "Check",  # Map 'Check or Slip #' to 'Check'
+#             }
+
+#         # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the dynamic mapping
+#         for original_col, target_col in column_mapping.items():
+#             if original_col in chase_df.columns:
+#                 chase_df_2[target_col] = chase_df[original_col]
+#             else:
+#                 print(f"Warning: {original_col} not found in DataFrame 1.")
+
+#         # Step 6: Handle missing 'KEY' column and fill with 0 if necessary
+#         if 'KEY' not in chase_df_2.columns:
+#             chase_df_2['KEY'] = 0
+
+#         # Step 7: Handle 'Check' column (if applicable)
+#         if 'Check' not in chase_df_2.columns:
+#             chase_df_2['Check'] = 'N/A'  # If there's no Check, default to 'N/A'
+
+#         print("Preprocessing complete.")
+#         print("First few rows of chase_df_2:")
+#         print(chase_df_2.head())  # Display first few rows of the new DataFrame 2
+        
+#         return chase_df_2
+    
+#     except Exception as e:
+#         print(f"Error processing file {transaction_file_name}: {e}")
+#         return None
+
+
+
+
 def preprocess_file(transaction_file_name):
     """Load and preprocess the CSV file into DataFrame 1 and then create DataFrame 2."""
     global chase_df_2
@@ -82,10 +159,13 @@ def preprocess_file(transaction_file_name):
         # Step 1: Import the original file into DataFrame 1 (chase_df)
         chase_df = pd.read_csv(transaction_file_name)  # Don't skip any rows
         columns_1 = chase_df.columns.to_list()
-        print(f"Columns in the loaded file: {columns_1}")
+        print(columns_1)
         print(chase_df.tail())
         print(f"File loaded successfully: {transaction_file_name}")
         
+        # Print the column names to debug (with trimming)
+        print("Columns in the loaded file:", chase_df.columns)
+
         # Trim any extra spaces from column names
         chase_df.columns = chase_df.columns.str.strip()
 
@@ -94,62 +174,46 @@ def preprocess_file(transaction_file_name):
         
         # Step 3: Initialize DataFrame 2 (chase_df_2) with empty columns
         chase_df_2 = pd.DataFrame(columns=desired_columns)
+        print(chase_df_2.columns.to_list())
+        
+        # Step 4: Create a mapping structure to map columns from DataFrame 1 to DataFrame 2
+        column_mapping = {
+            "Details": "Details",               # Mapping 'Details' directly
+            "Posting Date": "Posting Date",     # 'Posting Date' stays the same
+            "Description": "Description",       # 'Description' stays the same
+            "Amount": "Amount",                 # 'Amount' stays the same
+            "Type": "Type",                     # 'Type' stays the same
+            "Balance": "Balance",               # 'Balance' stays the same
+            "Check or Slip #": "Check",         # Map 'Check or Slip #' to 'Check'
+        }
 
-        # Step 4: Create a dynamic column mapping based on the file structure
-        column_mapping = {}
-
-        # Check if the file has 'Debit' and 'Credit' columns (assuming the alternative structure)
-        if 'Debit' in chase_df.columns and 'Credit' in chase_df.columns:
-            print("Using alternative structure (Debit/Credit columns detected).")
-            column_mapping = {
-                "Date": "Posting Date",  # Map Date to Posting Date
-                "Description": "Description",  # Direct mapping
-                "Debit": "Amount",  # Debit becomes Amount
-                "Credit": "Amount",  # Credit becomes Amount (negative)
-                "Type": "Type",  # Type can be copied directly
-                "Balance": "Balance",  # Balance can be copied directly
-                "Check or Slip #": "Check",  # Map 'Check or Slip #' to 'Check'
-            }
-        else:
-            print("Using default structure (No Debit/Credit columns).")
-            column_mapping = {
-                "Details": "Details",  # Direct mapping for Details
-                "Posting Date": "Posting Date",  # Direct mapping for Posting Date
-                "Description": "Description",  # Direct mapping for Description
-                "Amount": "Amount",  # Direct mapping for Amount
-                "Type": "Type",  # Type can be copied directly
-                "Balance": "Balance",  # Balance can be copied directly
-                "Check or Slip #": "Check",  # Map 'Check or Slip #' to 'Check'
-            }
-
-        # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the dynamic mapping
+        # Step 5: Populate DataFrame 2 with values from DataFrame 1 using the mapping
         for original_col, target_col in column_mapping.items():
+            print(original_col, target_col)
             if original_col in chase_df.columns:
                 chase_df_2[target_col] = chase_df[original_col]
             else:
                 print(f"Warning: {original_col} not found in DataFrame 1.")
 
-        # Step 6: Handle missing 'KEY' column and fill with 0 if necessary
-        if 'KEY' not in chase_df_2.columns:
-            chase_df_2['KEY'] = 0
+        # Step 6: Handle Amount column for Debit/Credit logic
+        # Assuming negative values in the 'Amount' column are debits
+        chase_df_2['Amount'] = chase_df_2['Amount'].apply(lambda x: -abs(x) if pd.notnull(x) else 0)
 
-        # Step 7: Handle 'Check' column (if applicable)
-        if 'Check' not in chase_df_2.columns:
-            chase_df_2['Check'] = 'N/A'  # If there's no Check, default to 'N/A'
+        # Step 7: Handle missing 'KEY' values and fill with 0
+        chase_df_2['KEY'] = chase_df_2['KEY'].fillna(0)
 
+        # Step 8: Add handling for 'Check' (if applicable) - You might want to handle 'Check' or 'Slip #' as required
+        chase_df_2['Check'] = chase_df_2.get('Check', 'N/A')  # If there's no Check, default to 'N/A'
+        
         print("Preprocessing complete.")
         print("First few rows of chase_df_2:")
         print(chase_df_2.head())  # Display first few rows of the new DataFrame 2
-        
+        print_df_structure(chase_df_2)
         return chase_df_2
     
     except Exception as e:
         print(f"Error processing file {transaction_file_name}: {e}")
         return None
-
-
-
-
 
 
 
@@ -264,6 +328,19 @@ def join(file_coa):
     group_expenses()
 
 
+
+
+def print_df_structure(df):
+    print('**************************  DATAFRAME STRUCTURE')
+    # Iterate over all columns in the DataFrame
+    for column in df.columns:
+        print(f"Column: {column}")
+        print(df[column].head())  # Print first 5 rows of each column
+        print()  # Print a blank line for separation
+
+
+
+
 # Example of running the code
 if __name__ == "__main__":
 
@@ -276,15 +353,7 @@ if __name__ == "__main__":
     # Preprocess the transaction file
     chase_df_2 = preprocess_file(transaction_file_name)
     print('**************************  PRE PROCESSED')
-
-
-        # Iterate over all columns in the DataFrame
-    for column in chase_df_2.columns:
-        print(f"Column: {column}")
-        print(chase_df_2[column].head())  # Print first 5 rows of each column
-        print()  # Print a blank line for separation
-
-
+    print_df_structure(chase_df_2)
     exit()
 
 
