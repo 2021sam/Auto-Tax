@@ -131,22 +131,10 @@ def group_expenses(df):
     
     # Merge the grouped data with the COA key based on the KEY column
     e = pd.merge(key, y, how='outer', on='KEY')
-    
-    # Invert the amounts (multiply by -1)
-    e['Amount'] = e['Amount'] * -1
-    
-    # Query the results to filter positive amounts (expenses)
-    expense_sum = e.query('Amount > 0')
-
-    # Save the result to a CSV file in the same directory as the script
-    save_path = os.path.join(os.path.dirname(__file__), "Expense.csv")
-    
-    print("Your tax file is saved to the following location:")
-    print(save_path)
-    
-    # Save the DataFrame to the CSV file
-    expense_sum.to_csv(save_path)
-    print("File saved successfully.")
+    print('.................................. group_expenses')
+    print_df_structure(e)
+    expense_sum = e[e['Amount'].notna()]    #: This line filters out rows where the Amount is NaN.
+    return expense_sum
 
 
 def print_df_structure(df):
@@ -161,6 +149,19 @@ def print_df_structure(df):
     print('.')
     print('First Row & First Column (iloc[0, 0]):')
     print(df.iloc[0, 0])
+
+
+def save_expenses_to_csv(expense_sum):
+    """Save the expenses DataFrame to a CSV file."""
+    save_path = os.path.join(os.path.dirname(__file__), "Expense.csv")
+    
+    print("Your tax file is saved to the following location:")
+    print(save_path)
+    
+    # Save the DataFrame to the CSV file
+    expense_sum.to_csv(save_path)
+    print("File saved successfully.")
+
 
 
 # Example of running the code
@@ -185,4 +186,6 @@ if __name__ == "__main__":
     if mia:
         print(f"Warning: There are {mia} transactions MIA.")
 
-    group_expenses(mapped_transactions)
+    expense_sum = group_expenses(mapped_transactions)
+    save_expenses_to_csv(expense_sum)
+    
