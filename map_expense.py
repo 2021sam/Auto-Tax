@@ -34,7 +34,7 @@ def import_data(transaction_file_name):
     df.columns = header_row
 
     # Print the DataFrame structure
-    print_df_structure(df)
+    # print_df_structure(df)
     return df
 
 def preprocess_file(df):
@@ -71,7 +71,7 @@ def preprocess_file(df):
 
     # Print the final structure and check if rows are added
     print("df_2 structure after preprocessing:")
-    print_df_structure(df_2)
+    # print_df_structure(df_2)
 
     return df_2
 
@@ -91,7 +91,7 @@ def map(df, file_coa):
     try:
         coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
         print(f"COA file loaded successfully: {file_coa}")
-        print_df_structure(coa)
+        # print_df_structure(coa)
     except Exception as e:
         print(f"Error loading COA file {file_coa}: {e}")
         return None, None
@@ -129,11 +129,35 @@ def group_expenses(df):
     # Read the Chart of Accounts Key (COA) file
     key = pd.read_csv(os.path.join(os.path.dirname(__file__), 'data', 'coa', 'Chart_Of_Accounts_Key.txt'), encoding='latin1', thousands=',')
     
+    print('********************************** KEY')
+    # key = key[key['KEY'] != 0]
+    # key = key[key['KEY'] != 0]  # Filter out the row with KEY == 0
+    print_df_structure(key)
     # Merge the grouped data with the COA key based on the KEY column
     e = pd.merge(key, y, how='outer', on='KEY')
     print('.................................. group_expenses')
-    print_df_structure(e)
+    # print_df_structure(e)
     expense_sum = e[e['Amount'].notna()]    #: This line filters out rows where the Amount is NaN.
+
+
+
+    print('expense_sum:')
+    print(expense_sum.index)
+    
+    # print(f"key['0'] value: {key.iloc[0]}")  # Checking the first row
+
+    # print("First few rows of 'key':")
+    # print(key.head())
+
+    # print("First few rows of 'expense_sum':")
+    # print(expense_sum.head())
+
+
+    # expense_sum = expense_sum.drop(index=key[0])
+    # If key['0'] is an integer index (e.g., 0)
+    # expense_sum = expense_sum.drop(index=int(key['0']), errors='ignore')
+
+
     return expense_sum
 
 
@@ -182,9 +206,7 @@ if __name__ == "__main__":
     
     # Call the map function to map the transactions with the COA
     mia, mapped_transactions = map(df, file_coa)
-
-    if mia:
-        print(f"Warning: There are {mia} transactions MIA.")
+    print(f"Warning: There are {mia} transactions MIA.")
 
     expense_sum = group_expenses(mapped_transactions)
     save_expenses_to_csv(expense_sum)
