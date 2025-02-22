@@ -1,0 +1,10 @@
+
+📊 **Transaction Breakdown:**
+
+   🏦 Total Transactions:     71,630.12
+   ✅ Mapped Transactions:    24,738.09
+   ❓ Non-Mapped Transactions: 46,892.03
+   ----------------------------
+   🔎 Expected Total:         71,630.12
+
+✅✅✅ Everything balances! Your transactions are fully accounted for! ✅✅✅

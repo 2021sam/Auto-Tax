@@ -87,24 +87,77 @@ def preprocess_file(df):
     return df_2
 
 
+# def map(df, file_coa):
+#     """Perform the mapping of COA to the global DataFrame and log non-mapped transactions."""
+#     print('\nMapping transactions with COA file...')
+
+#     if df is None:
+#         print("Error: The transaction data has not been preprocessed yet.")
+#         return None, None, None  # Return None for all values if df is empty
+
+#     # Read the COA file
+#     try:
+#         coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
+#         print(f"COA file loaded successfully: {file_coa}")
+#     except Exception as e:
+#         print(f"Error loading COA file {file_coa}: {e}")
+#         return None, None, None
+
+#     mia = 0  # Counter for missing transactions
+#     non_mapped_transactions = []  # Store non-mapped transactions
+
+#     # Iterate through each row in the DataFrame
+#     for i, row in df.iterrows():
+#         match = False
+
+#         # Perform the mapping based on the COA description
+#         for j, coa_row in coa.iterrows():
+#             if pd.notna(coa.loc[j, 'DESCRIPTION']) and coa.loc[j, 'DESCRIPTION'] in str(df.loc[i, 'Description']):
+#                 match = True
+#                 df.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
+
+#         # If no match found, log missing transactions
+#         if not match:
+#             mia += 1
+#             non_mapped_transactions.append(df.loc[i])
+
+#     # Convert non-mapped transactions list into a DataFrame
+#     non_mapped_df = pd.DataFrame(non_mapped_transactions)
+
+#     # Print a clear heading for missing transactions
+#     if not non_mapped_df.empty:
+#         print("\n⚠️ Missing Transactions (MIA) - Update COA Mappings:")
+#         print(f"{'Description':<40} {'Amount':<10}")
+#         print("-" * 50)
+#         for _, row in non_mapped_df.iterrows():
+#             print(f"{row['Description']:<40} {row['Amount']:<10.2f}")
+
+#         # Save non-mapped transactions to a file
+#         mia_file = os.path.join(os.path.dirname(__file__), "Non_Mapped_Transactions.csv")
+#         non_mapped_df.to_csv(mia_file, index=False)
+#         print(f"\n📝 Non-mapped transactions saved to: {mia_file}")
+
+#     return mia, df, non_mapped_df  # Return non-mapped transactions as a DataFrame
+
+
 def map(df, file_coa):
     """Perform the mapping of COA to the global DataFrame and log non-mapped transactions."""
     print('\nMapping transactions with COA file...')
-    
+
     if df is None:
         print("Error: The transaction data has not been preprocessed yet.")
-        return None, None
-    
+        return None, None, None
+
     # Read the COA file
     try:
         coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
         print(f"COA file loaded successfully: {file_coa}")
     except Exception as e:
         print(f"Error loading COA file {file_coa}: {e}")
-        return None, None
-    
+        return None, None, None
+
     mia = 0  # Counter for missing transactions
-    non_mapped_transactions = []  # Store non-mapped transactions
+    non_mapped_list = []  # Store non-mapped transactions
 
     # Iterate through each row in the DataFrame
     for i, row in df.iterrows():
@@ -114,30 +167,27 @@ def map(df, file_coa):
         for j, coa_row in coa.iterrows():
             if pd.notna(coa.loc[j, 'DESCRIPTION']) and coa.loc[j, 'DESCRIPTION'] in str(df.loc[i, 'Description']):
                 match = True
-                df.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
-        
-        # If no match found, log missing transactions
+                df.at[i, 'KEY'] = coa.loc[j, 'EXPENSE']
+                break  # Stop checking after the first match
+
+        # If no match found, add to non-mapped list
         if not match:
             mia += 1
-            non_mapped_transactions.append([
-                df.loc[i, 'Description'], df.loc[i, 'Amount']
-            ])
-    
-    # Print a clear heading for missing transactions
-    if non_mapped_transactions:
-        print("\n⚠️ Missing Transactions (MIA) - Update COA Mappings:")
-        print(f"{'Description':<40} {'Amount':<10}")
-        print("-" * 50)
-        for desc, amount in non_mapped_transactions:
-            print(f"{desc:<40} {amount:<10.2f}")
+            non_mapped_list.append(df.iloc[i])  # Store the full row
 
-        # Save non-mapped transactions to a file
-        mia_file = os.path.join(os.path.dirname(__file__), "Non_Mapped_Transactions.csv")
-        pd.DataFrame(non_mapped_transactions, columns=["Description", "Amount"]).to_csv(mia_file, index=False)
-        
-        print(f"\n📝 Non-mapped transactions saved to: {mia_file}")
+    # Create DataFrames for mapped and non-mapped transactions
+    mapped_transactions = df[df['KEY'].notna()].copy()
+    non_mapped_transactions = pd.DataFrame(non_mapped_list)
 
-    return mia, df
+    # Print non-mapped transactions and save to file
+    if not non_mapped_transactions.empty:
+        print(f"\n⚠️ {len(non_mapped_transactions)} Transactions Missing COA Mapping!")
+        non_mapped_file = os.path.join(os.path.dirname(__file__), "Non_Mapped_Transactions.csv")
+        non_mapped_transactions.to_csv(non_mapped_file, index=False)
+        print(f"📝 Non-mapped transactions saved to: {non_mapped_file}")
+
+    return mia, mapped_transactions, non_mapped_transactions
+
 
 
 def group_expenses(df):
@@ -201,57 +251,195 @@ def print_df_structure(df):
 
 
 
-def validate_transactions(df, mapped_transactions, non_mapped_transactions):
-    """Validate transaction mappings and generate a summary report."""
-    print("\n🔍 Running Validation Checks...")
+# def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+#     """Validate transaction mappings and generate a summary report."""
+#     print("\n🔍 Running Validation Checks...")
 
-    # Compute totals
-    total_transactions = df['Amount'].sum()
-    total_mapped = mapped_transactions['Amount'].sum()
+#     # Compute totals
+#     total_transactions = df['Amount'].sum()
+#     total_mapped = mapped_transactions['Amount'].sum()
 
-    # Only include non-mapped transactions that are truly missing (not just unmapped)
-    total_missing = total_transactions - total_mapped
+#     # Only include non-mapped transactions that are truly missing (not just unmapped)
+#     total_missing = total_transactions - total_mapped
 
-    total_debits = df['Debit'].sum() if 'Debit' in df.columns else 0
-    total_credits = df['Credit'].sum() if 'Credit' in df.columns else 0
-    total_debits_credits = total_debits - total_credits  # Debits minus Credits
+#     total_debits = df['Debit'].sum() if 'Debit' in df.columns else 0
+#     total_credits = df['Credit'].sum() if 'Credit' in df.columns else 0
+#     total_debits_credits = total_debits - total_credits  # Debits minus Credits
     
-    # Print calculated values before assertion
-    print(f"Total Transactions: {total_transactions:,.2f}")
-    print(f"Total Mapped Transactions: {total_mapped:,.2f}")
-    print(f"Total Missing Transactions: {total_missing:,.2f}")
-    print(f"Total Debits: {total_debits:,.2f}")
-    print(f"Total Credits: {total_credits:,.2f}")
-    print(f"Total Debits & Credits (Debits - Credits): {total_debits_credits:,.2f}")
+#     # Print calculated values before assertion
+#     print(f"Total Transactions: {total_transactions:,.2f}")
+#     print(f"Total Mapped Transactions: {total_mapped:,.2f}")
+#     print(f"Total Missing Transactions: {total_missing:,.2f}")
+#     print(f"Total Debits: {total_debits:,.2f}")
+#     print(f"Total Credits: {total_credits:,.2f}")
+#     print(f"Total Debits & Credits (Debits - Credits): {total_debits_credits:,.2f}")
 
-    # Debug: Check for missing transactions
-    difference = total_transactions - total_mapped
-    print(f"\n⚠️ Difference Detected: {difference:.2f}")
+#     # Debug: Check for missing transactions
+#     difference = total_transactions - total_mapped
+#     print(f"\n⚠️ Difference Detected: {difference:.2f}")
 
-    # Assertion Check (Allow a small rounding tolerance)
-    assert abs(difference) < 0.01, "Error: Mapped transactions do not equal total transactions!"
+#     # Assertion Check (Allow a small rounding tolerance)
+#     assert abs(difference) < 0.01, "Error: Mapped transactions do not equal total transactions!"
 
-    # Create summary dictionary
-    summary = {
+#     # Create summary dictionary
+#     summary = {
+#         "Total Transactions": total_transactions,
+#         "Total Mapped Transactions": total_mapped,
+#         "Total Missing Transactions": total_missing,
+#         "Total Debits": total_debits,
+#         "Total Credits": total_credits,
+#         "Total Debits & Credits (Debits - Credits)": total_debits_credits,
+#         "Difference": difference
+#     }
+
+#     # Save summary to CSV
+#     summary_file = os.path.join(os.path.dirname(__file__), "Transaction_Summary.csv")
+#     pd.DataFrame(summary.items(), columns=["Metric", "Value"]).to_csv(summary_file, index=False)
+
+#     print(f"\n📊 **Summary saved to:** {summary_file}")
+
+#     return summary
+
+
+# def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+#     """Validate transaction mappings and generate a summary report."""
+#     print("\n🔍 Running Validation Checks...")
+
+#     total_transactions = df['Amount'].sum()
+#     total_mapped = mapped_transactions['Amount'].sum()
+#     total_non_mapped = non_mapped_transactions['Amount'].sum()
+
+#     # Ensure non-mapped transactions are not already counted
+#     total_missing = total_transactions - total_mapped
+    
+#     print(f"\n🔎 Debug: Non-Mapped Transactions Count = {len(non_mapped_transactions)}")
+#     print(f"🔎 Debug: Non-Mapped Transactions Total = {total_non_mapped:,.2f}")
+#     print(f"🔎 Debug: Total Missing Transactions = {total_missing:,.2f}")
+
+#     # If non-mapped sum is nonzero but missing transactions is zero, something is double-counted
+#     assert round(total_missing, 2) == round(total_non_mapped, 2), \
+#         f"Error: Non-mapped transactions do not match missing transactions! (Difference: {total_missing - total_non_mapped:.2f})"
+
+#     print(f"\n⚠️ Difference Detected: {total_missing:.2f}")
+
+#     return {
+#         "Total Transactions": total_transactions,
+#         "Total Mapped Transactions": total_mapped,
+#         "Total Non-Mapped Transactions": total_non_mapped,
+#         "Total Missing Transactions": total_missing
+#     }
+
+
+# def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+#     """Validate transaction mappings and generate a summary report."""
+#     print("\n🔍 Running Validation Checks...")
+
+#     total_transactions = df['Amount'].sum()
+#     total_mapped = mapped_transactions['Amount'].sum()
+#     total_non_mapped = non_mapped_transactions['Amount'].sum()
+
+#     # Ensure non-mapped transactions are not already counted
+#     total_missing = total_transactions - total_mapped
+    
+#     print(f"\n🔎 Debug: Non-Mapped Transactions Count = {len(non_mapped_transactions)}")
+#     print(f"🔎 Debug: Non-Mapped Transactions Total = {total_non_mapped:,.2f}")
+#     print(f"🔎 Debug: Total Missing Transactions = {total_missing:,.2f}")
+
+#     # If non-mapped sum is nonzero but missing transactions is zero, something is double-counted
+#     assert round(total_missing, 2) == round(total_non_mapped, 2), \
+#         f"Error: Non-mapped transactions do not match missing transactions! (Difference: {total_missing - total_non_mapped:.2f})"
+
+#     print(f"\n⚠️ Difference Detected: {total_missing:.2f}")
+
+#     return {
+#         "Total Transactions": total_transactions,
+#         "Total Mapped Transactions": total_mapped,
+#         "Total Non-Mapped Transactions": total_non_mapped,
+#         "Total Missing Transactions": total_missing
+#     }
+
+
+
+# def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+#     """Validate transaction mappings and generate a summary report."""
+#     print("\n🔍 Running Validation Checks...")
+
+#     total_transactions = df['Amount'].sum()
+#     total_mapped = mapped_transactions['Amount'].sum() if not mapped_transactions.empty else 0
+#     total_non_mapped = non_mapped_transactions['Amount'].sum() if not non_mapped_transactions.empty else 0
+
+#     # Total missing should match non-mapped transactions
+#     total_missing = total_transactions - total_mapped
+
+#     # Debug: Print full breakdown
+#     print(f"\n🔎 Debug: Total Transactions = {total_transactions:,.2f}")
+#     print(f"🔎 Debug: Total Mapped Transactions = {total_mapped:,.2f}")  # ✅ FIXED: Now printing mapped total
+#     print(f"🔎 Debug: Non-Mapped Transactions Count = {len(non_mapped_transactions)}")
+#     print(f"🔎 Debug: Non-Mapped Transactions Total = {total_non_mapped:,.2f}")
+#     print(f"🔎 Debug: Total Missing Transactions = {total_missing:,.2f}")
+
+#     assert round(total_missing, 2) == round(total_non_mapped, 2), \
+#         f"Error: Non-mapped transactions do not match missing transactions! (Difference: {total_missing - total_non_mapped:.2f})"
+
+#     if total_missing > 0:
+#         print(f"\n✅ Validation Passed! {total_missing:.2f} in non-mapped transactions need COA assignment.")
+#     else:
+#         print("\n✅ All transactions are mapped correctly!")
+
+#     return {
+#         "Total Transactions": total_transactions,
+#         "Total Mapped Transactions": total_mapped,
+#         "Total Non-Mapped Transactions": total_non_mapped,
+#         "Total Missing Transactions": total_missing
+#     }
+
+
+
+def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+    """Validate transaction mappings and generate a summary report in a clear, math-style format."""
+    print("\n🔍 Running Validation Checks...\n")
+
+    total_transactions = df['Amount'].sum()
+    total_mapped = mapped_transactions['Amount'].sum() if not mapped_transactions.empty else 0
+    total_non_mapped = non_mapped_transactions['Amount'].sum() if not non_mapped_transactions.empty else 0
+
+    # Total missing should match non-mapped transactions
+    total_missing = total_transactions - total_mapped
+    expected_total = total_mapped + total_non_mapped
+
+    # Prepare summary as a formatted string
+    summary_output = f"""
+📊 **Transaction Breakdown:**
+
+   🏦 Total Transactions:     {total_transactions:,.2f}
+   ✅ Mapped Transactions:    {total_mapped:,.2f}
+   ❓ Non-Mapped Transactions: {total_non_mapped:,.2f}
+   ----------------------------
+   🔎 Expected Total:         {expected_total:,.2f}
+"""
+
+    # Validation check
+    if round(total_transactions, 2) == round(expected_total, 2):
+        summary_output += "\n✅✅✅ Everything balances! Your transactions are fully accounted for! ✅✅✅\n"
+    else:
+        summary_output += f"\n❌ ERROR: Expected Total ({expected_total:,.2f}) does not match Total Transactions ({total_transactions:,.2f})!\n"
+
+    # Print to console
+    print(summary_output)
+
+    # Save summary to a text file
+    summary_file = os.path.join(os.path.dirname(__file__), "Transaction_Summary.txt")
+    with open(summary_file, "w") as file:
+        file.write(summary_output)
+
+    print(f"📄 **Summary saved to:** {summary_file}")
+
+    return {
         "Total Transactions": total_transactions,
         "Total Mapped Transactions": total_mapped,
-        "Total Missing Transactions": total_missing,
-        "Total Debits": total_debits,
-        "Total Credits": total_credits,
-        "Total Debits & Credits (Debits - Credits)": total_debits_credits,
-        "Difference": difference
+        "Total Non-Mapped Transactions": total_non_mapped,
+        "Expected Total": expected_total
     }
-
-    # Save summary to CSV
-    summary_file = os.path.join(os.path.dirname(__file__), "Transaction_Summary.csv")
-    pd.DataFrame(summary.items(), columns=["Metric", "Value"]).to_csv(summary_file, index=False)
-
-    print(f"\n📊 **Summary saved to:** {summary_file}")
-
-    return summary
-
-
-
 
 
 def save_expenses_to_csv(expense_sum):
@@ -291,12 +479,26 @@ if __name__ == "__main__":
 
     df['KEY'] = None  # Add a new column called 'KEY' with a default value
     
-    # Call the map function to map the transactions with the COA
-    mia, mapped_transactions = map(df, file_coa)
-    print(f"Warning: There are {mia} transactions MIA.")
+    # # Call the map function to map the transactions with the COA
+    # mia, mapped_transactions = map(df, file_coa)
+    # print(f"Warning: There are {mia} transactions MIA.")
 
-    # Get non-mapped transactions
-    non_mapped_transactions = df[df['KEY'].isna()]
+    # # Get non-mapped transactions
+    # non_mapped_transactions = df[df['KEY'].isna()]
+
+    # # Validate transactions and generate summary
+    # validate_transactions(df, mapped_transactions, non_mapped_transactions)
+
+    # expense_sum = group_expenses(mapped_transactions)
+    # save_expenses_to_csv(expense_sum)
+
+
+    # Call the map function to map the transactions with the COA and get non-mapped transactions
+    mia, mapped_transactions, non_mapped_transactions = map(df, file_coa)
+
+    print(f"\n🔎 Debug: Non-Mapped Transactions Count = {len(non_mapped_transactions)}")
+    print(f"🔎 Debug: Non-Mapped Transactions Total = {non_mapped_transactions['Amount'].sum():,.2f}")
+
 
     # Validate transactions and generate summary
     validate_transactions(df, mapped_transactions, non_mapped_transactions)
