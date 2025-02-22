@@ -60,3 +60,5 @@ admin2C
 
 utility/geo/data/*.txt
 utility/geo/data/US/*.txt
+
+*.html

@@ -1,4 +1,5 @@
 "KEY","ACCOUNT"
+0,"Non Expense"
 1,"Accounting"
 2,"Bad Loan Expense"
 3,"Bank Charges"
