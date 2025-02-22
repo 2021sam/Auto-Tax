@@ -200,6 +200,7 @@ def print_df_structure(df):
 
 
 
+
 def validate_transactions(df, mapped_transactions, non_mapped_transactions):
     """Validate transaction mappings and generate a summary report."""
     print("\n🔍 Running Validation Checks...")
@@ -207,7 +208,9 @@ def validate_transactions(df, mapped_transactions, non_mapped_transactions):
     # Compute totals
     total_transactions = df['Amount'].sum()
     total_mapped = mapped_transactions['Amount'].sum()
-    total_non_mapped = non_mapped_transactions['Amount'].sum()
+
+    # Only include non-mapped transactions that are truly missing (not just unmapped)
+    total_missing = total_transactions - total_mapped
 
     total_debits = df['Debit'].sum() if 'Debit' in df.columns else 0
     total_credits = df['Credit'].sum() if 'Credit' in df.columns else 0
@@ -216,23 +219,23 @@ def validate_transactions(df, mapped_transactions, non_mapped_transactions):
     # Print calculated values before assertion
     print(f"Total Transactions: {total_transactions:,.2f}")
     print(f"Total Mapped Transactions: {total_mapped:,.2f}")
-    print(f"Total Non-Mapped Transactions: {total_non_mapped:,.2f}")
+    print(f"Total Missing Transactions: {total_missing:,.2f}")
     print(f"Total Debits: {total_debits:,.2f}")
     print(f"Total Credits: {total_credits:,.2f}")
     print(f"Total Debits & Credits (Debits - Credits): {total_debits_credits:,.2f}")
 
     # Debug: Check for missing transactions
-    difference = total_transactions - (total_mapped + total_non_mapped)
+    difference = total_transactions - total_mapped
     print(f"\n⚠️ Difference Detected: {difference:.2f}")
 
     # Assertion Check (Allow a small rounding tolerance)
-    assert abs(difference) < 0.01, "Error: Mapped + Non-Mapped transactions do not equal total transactions!"
+    assert abs(difference) < 0.01, "Error: Mapped transactions do not equal total transactions!"
 
     # Create summary dictionary
     summary = {
         "Total Transactions": total_transactions,
         "Total Mapped Transactions": total_mapped,
-        "Total Non-Mapped Transactions": total_non_mapped,
+        "Total Missing Transactions": total_missing,
         "Total Debits": total_debits,
         "Total Credits": total_credits,
         "Total Debits & Credits (Debits - Credits)": total_debits_credits,
@@ -246,7 +249,6 @@ def validate_transactions(df, mapped_transactions, non_mapped_transactions):
     print(f"\n📊 **Summary saved to:** {summary_file}")
 
     return summary
-
 
 
 
