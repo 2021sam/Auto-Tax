@@ -2,6 +2,17 @@ import os
 import pandas as pd
 from tkinter import filedialog, Tk
 
+def select_transaction_file():
+    """Open a file dialog to allow user to select a transaction file."""
+    root = Tk()
+    root.withdraw()  # Hide the root window
+    file_path = filedialog.askopenfilename(
+        title="Select Transaction File",
+        filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+    )
+    return file_path
+
+
 def import_data(transaction_file_name):
     print('Import Data:')
     # Read the actual header row (first row) separately using nrows=1
@@ -190,12 +201,20 @@ def save_expenses_to_csv(expense_sum):
 
 # Example of running the code
 if __name__ == "__main__":
+    # Provide path to the transaction file here
+    # transaction_file_name = os.path.join(os.path.dirname(__file__), 'data', 'transactions', 'Chase0106_Activity_20250205.CSV')
+    # Ask user to select the transaction file
+    transaction_file_name = select_transaction_file()
+
+    if not transaction_file_name:
+        print("No file selected. Exiting...")
+        exit()
+
+    df = import_data(transaction_file_name)
+
     # Relative path to the COA file
     file_coa = os.path.join(os.path.dirname(__file__), 'data', 'coa', 'Chart_Of_Accounts_Mappings.txt')
 
-    # Provide path to the transaction file here
-    transaction_file_name = os.path.join(os.path.dirname(__file__), 'data', 'transactions', 'Chase0106_Activity_20250205.CSV')
-    df = import_data(transaction_file_name)
 
     # Check if both 'Debit' and 'Credit' columns are present
     if 'Debit' in df.columns and 'Credit' in df.columns:
