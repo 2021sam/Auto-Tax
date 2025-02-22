@@ -88,45 +88,55 @@ def preprocess_file(df):
 
 
 def map(df, file_coa):
-    """Perform the mapping of COA to the global DataFrame."""
-    print('')
-    print('map')
+    """Perform the mapping of COA to the global DataFrame and log non-mapped transactions."""
+    print('\nMapping transactions with COA file...')
     
     if df is None:
         print("Error: The transaction data has not been preprocessed yet.")
         return None, None
     
-    print(f'Mapping transactions with COA file: {file_coa}')
-    
-    # Read the chart of accounts (COA) file
+    # Read the COA file
     try:
         coa = pd.read_csv(file_coa, encoding='latin1', thousands=',')
         print(f"COA file loaded successfully: {file_coa}")
-        # print_df_structure(coa)
     except Exception as e:
         print(f"Error loading COA file {file_coa}: {e}")
         return None, None
     
-    # Initialize a variable to track how many rows do not match COA
-    mia = 0
-    
+    mia = 0  # Counter for missing transactions
+    non_mapped_transactions = []  # Store non-mapped transactions
+
     # Iterate through each row in the DataFrame
     for i, row in df.iterrows():
         match = False
 
         # Perform the mapping based on the COA description
         for j, coa_row in coa.iterrows():
-            if coa.loc[j, 'DESCRIPTION'] in df.loc[i, 'Description']:
+            if pd.notna(coa.loc[j, 'DESCRIPTION']) and coa.loc[j, 'DESCRIPTION'] in str(df.loc[i, 'Description']):
                 match = True
                 df.loc[i, 'KEY'] = coa.loc[j, 'EXPENSE']
         
-        # If no match found, increment 'mia'
+        # If no match found, log missing transactions
         if not match:
             mia += 1
-            print(i, df.loc[i, 'KEY'], df.loc[i, 'Description'], df.loc[i, 'Amount'])
-
-    print(f'MIA = {mia}')
+            non_mapped_transactions.append([
+                df.loc[i, 'Description'], df.loc[i, 'Amount']
+            ])
     
+    # Print a clear heading for missing transactions
+    if non_mapped_transactions:
+        print("\n⚠️ Missing Transactions (MIA) - Update COA Mappings:")
+        print(f"{'Description':<40} {'Amount':<10}")
+        print("-" * 50)
+        for desc, amount in non_mapped_transactions:
+            print(f"{desc:<40} {amount:<10.2f}")
+
+        # Save non-mapped transactions to a file
+        mia_file = os.path.join(os.path.dirname(__file__), "Non_Mapped_Transactions.csv")
+        pd.DataFrame(non_mapped_transactions, columns=["Description", "Amount"]).to_csv(mia_file, index=False)
+        
+        print(f"\n📝 Non-mapped transactions saved to: {mia_file}")
+
     return mia, df
 
 
