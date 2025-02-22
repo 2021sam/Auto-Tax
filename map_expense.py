@@ -196,6 +196,62 @@ def print_df_structure(df):
     print(df.iloc[0, 0])
 
 
+
+
+
+
+def validate_transactions(df, mapped_transactions, non_mapped_transactions):
+    """Validate transaction mappings and generate a summary report."""
+    print("\n🔍 Running Validation Checks...")
+
+    # Compute totals
+    total_transactions = df['Amount'].sum()
+    total_mapped = mapped_transactions['Amount'].sum()
+    total_non_mapped = non_mapped_transactions['Amount'].sum()
+
+    total_debits = df['Debit'].sum() if 'Debit' in df.columns else 0
+    total_credits = df['Credit'].sum() if 'Credit' in df.columns else 0
+    total_debits_credits = total_debits - total_credits  # Debits minus Credits
+    
+    # Print calculated values before assertion
+    print(f"Total Transactions: {total_transactions:,.2f}")
+    print(f"Total Mapped Transactions: {total_mapped:,.2f}")
+    print(f"Total Non-Mapped Transactions: {total_non_mapped:,.2f}")
+    print(f"Total Debits: {total_debits:,.2f}")
+    print(f"Total Credits: {total_credits:,.2f}")
+    print(f"Total Debits & Credits (Debits - Credits): {total_debits_credits:,.2f}")
+
+    # Debug: Check for missing transactions
+    difference = total_transactions - (total_mapped + total_non_mapped)
+    print(f"\n⚠️ Difference Detected: {difference:.2f}")
+
+    # Assertion Check (Allow a small rounding tolerance)
+    assert abs(difference) < 0.01, "Error: Mapped + Non-Mapped transactions do not equal total transactions!"
+
+    # Create summary dictionary
+    summary = {
+        "Total Transactions": total_transactions,
+        "Total Mapped Transactions": total_mapped,
+        "Total Non-Mapped Transactions": total_non_mapped,
+        "Total Debits": total_debits,
+        "Total Credits": total_credits,
+        "Total Debits & Credits (Debits - Credits)": total_debits_credits,
+        "Difference": difference
+    }
+
+    # Save summary to CSV
+    summary_file = os.path.join(os.path.dirname(__file__), "Transaction_Summary.csv")
+    pd.DataFrame(summary.items(), columns=["Metric", "Value"]).to_csv(summary_file, index=False)
+
+    print(f"\n📊 **Summary saved to:** {summary_file}")
+
+    return summary
+
+
+
+
+
+
 def save_expenses_to_csv(expense_sum):
     """Save the expenses DataFrame to a CSV file."""
     save_path = os.path.join(os.path.dirname(__file__), "Expense.csv")
@@ -237,6 +293,11 @@ if __name__ == "__main__":
     mia, mapped_transactions = map(df, file_coa)
     print(f"Warning: There are {mia} transactions MIA.")
 
+    # Get non-mapped transactions
+    non_mapped_transactions = df[df['KEY'].isna()]
+
+    # Validate transactions and generate summary
+    validate_transactions(df, mapped_transactions, non_mapped_transactions)
+
     expense_sum = group_expenses(mapped_transactions)
     save_expenses_to_csv(expense_sum)
-    
